@@ -6,6 +6,7 @@ const port = 9876;
 const WINDOW_SIZE = 10;
 const TIMEOUT_MS = 500;
 const BASE_URL = 'http://20.244.56.144/test';
+const ACCESS_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJNYXBDbGFpbXMiOnsiZXhwIjoxNzQyNDc1NDAxLCJpYXQiOjE3NDI0NzUxMDEsImlzcyI6IkFmZm9yZG1lZCIsImp0aSI6IjIzMGRhMGFkLTUzN2QtNDVmOC1iNmM1LTRiNDA3YTJkMGU4ZiIsInN1YiI6InJvaGluaXJlZGR5X3JAc3JtYXAuZWR1LmluIn0sImNvbXBhbnlOYW1lIjoiQWZmb3JkIE1lZGljYWwgVGVjaG5vbG9naWVzIiwiY2xpZW50SUQiOiIyMzBkYTBhZC01MzdkLTQ1ZjgtYjZjNS00YjQwN2EyZDBlOGYiLCJjbGllbnRTZWNyZXQiOiJiTExLbk5tVW9iSm1wSlFGIiwib3duZXJOYW1lIjoiUmVtYXRhIFJvaGluaSBSZWRkeSIsIm93bmVyRW1haWwiOiJyb2hpbmlyZWRkeV9yQHNybWFwLmVkdS5pbiIsInJvbGxObyI6IkFQMjIxMTAwMTE2NjcifQ.tTxKu_Fld9VDQA6WH82VSPGXbHdau-oWuy6rJOZm550';
 
 let numberStore = [];
 
@@ -34,9 +35,15 @@ const validateNumberId = (req, res, next) => {
 async function fetchNumbers(numberType) {
   try {
     const endpoint = apiEndpoints[numberType];
-    const response = await axios.get(`${BASE_URL}${endpoint}`, { timeout: TIMEOUT_MS });
+    const response = await axios.get(`${BASE_URL}${endpoint}`, { 
+      timeout: TIMEOUT_MS,
+      headers: {
+        'Authorization': `Bearer ${ACCESS_TOKEN}`
+      }
+    });
     return response.data.numbers || [];
   } catch (error) {
+    console.log(`Error fetching ${numberType} numbers, using mock data: ${error.message}`);
     return mockData[numberType];
   }
 }
@@ -72,6 +79,12 @@ app.get('/numbers/:numberid', validateNumberId, async (req, res) => {
     numbers: fetchedNumbers,
     avg: parseFloat(avg.toFixed(2))
   };
+
+
+  const responseTime = Date.now() - startTime;
+  if (responseTime > TIMEOUT_MS) {
+    console.warn(`Response took longer than expected: ${responseTime}ms`);
+  }
 
   res.json(response);
 });
